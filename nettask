@@ -1,0 +1,166 @@
+public class Net_Task extends AsyncTask {
+
+    public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
+    private OnInteract listener = null;
+    private Class object = null;
+    private List<Object> object_lst = null;
+    private HashMap<String,String> params = null; // 参数传入
+    private String url = "";
+    private String json = "";
+    private int http_type = 0; //0get,1post
+    private int result_type = 0; //0 object,1 list
+    private Context context = null;
+    private Object result = null;
+    private List<Object> result_lst = null;
+    private Boolean is_success = true;
+    private Boolean need_parse = false;
+    private Boolean need_header = false;
+    private String header_key = "";
+    private String header_value = "";
+    private String msg = "";
+    private String code = "";
+    private Boolean is_str_result = false;
+
+    //context，请求类型，返回对象or列表，请求地址，请求参数map，请求参数json，对象类型
+    public Net_Task(Context _context, int _http_type,int _result_type,String _url,HashMap _params,String _json, Class _object,Boolean _need_parse){
+        context = _context;
+        params = _params;
+        object = _object;
+        http_type = _http_type;
+        result_type = _result_type;
+        url = _url;
+        json = _json;
+        need_parse = _need_parse;
+    }
+
+    public void setHeader(String key,String value){
+        need_header = true;
+        header_key = key;
+        header_value = value;
+    }
+
+    public void setStringResult(){
+        is_str_result = true;
+    }
+
+    @Override
+    protected Object doInBackground(Object[] objects) {
+        String result_str = "";
+        if (http_type == 0){
+            if (params != null && !params.isEmpty()){
+                String param_combile = "";
+                int i = 0;
+                for (String key : params.keySet()) {
+                    if (i == params.size() - 1){
+                        param_combile += key + "=" + params.get(key);
+                    }else {
+                        param_combile += key + "=" + params.get(key) + "&";
+                    }
+                    i ++;
+                }
+                url += "?" + param_combile;
+            }
+            if (need_header) {
+                result_str = HttpConnect.getInstance().get_with_header(context, url, header_key, header_value);
+            }else {
+                result_str = HttpConnect.getInstance().get(context, url);
+            }
+        }
+        if (http_type == 1){
+            FormBody.Builder builder = new FormBody.Builder();
+            if (params != null && !params.isEmpty()){
+                for (String key : params.keySet()) {
+                    builder.add(key, params.get(key));
+                }
+                FormBody formBody=builder.build();
+                if (need_header){
+                    result_str = HttpConnect.getInstance().post_with_header(context,url,formBody,header_key,header_value);
+                }else {
+                    result_str = HttpConnect.getInstance().post(context, url, formBody);
+                }
+            } else if (json != null && !json.isEmpty()){
+                RequestBody json_body = RequestBody.create(JSON, json);
+                if (need_header){
+                    result_str = HttpConnect.getInstance().post_json_with_header(context,url,json_body,header_key,header_value);
+                }else {
+                    result_str = HttpConnect.getInstance().post_json(context,url,json_body);
+                }
+            } else {
+                FormBody formBody=builder.build();
+                if (need_header) {
+                    result_str = HttpConnect.getInstance().post_with_header(context, url, formBody, header_key, header_value);
+                }else {
+                    result_str = HttpConnect.getInstance().post(context, url, formBody);
+                }
+                }
+        }
+        if (result_str == null || result_str.isEmpty()){
+            is_success = false;
+            msg = "服务器连接失败";
+            return null;
+        }
+        System.out.println("result + " + result_str + " " + url);
+        code = JSONObject.parseObject(result_str).getString("code");
+        msg = JSONObject.parseObject(result_str).getString("msg");
+        if (code == null || code.equals("500")){
+            is_success = false;
+            msg = JSONObject.parseObject(result_str).getString("msg");
+            if (code != null && code.equals("500")){
+                if (msg == null || msg.isEmpty()){
+                    msg = "服务器开小差啦～";
+                }
+            }
+            if (msg == null || msg.isEmpty()){
+                msg = "服务器开小差啦～";
+            }
+            return null;
+        }
+        if (is_str_result){
+            result = JSONObject.parseObject(result_str).getString("data");
+        }else {
+            if (result_type == 0) {
+                if (need_parse) {
+                    try {
+                        result = JSONObject.parseObject(JSONObject.parseObject(result_str).getString("data"), object);
+                    } catch (Exception e) {
+                        is_success = false;
+                        msg = "解析失败";
+                        e.printStackTrace();
+                    }
+                }
+            }
+            if (result_type == 1) {
+                if (need_parse) {
+                    try {
+                        result_lst = (List<Object>) JSONObject.parseArray(JSONObject.parseObject(result_str).getString("data"), object);
+                    } catch (Exception e) {
+                        is_success = false;
+                        msg = "解析失败";
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
+    @Override
+    protected void onPostExecute(Object o) {
+        super.onPostExecute(o);
+
+        if (listener != null){
+            listener.call_back(result,result_lst,is_success,msg,code);
+        }
+    }
+
+    public interface OnInteract<T>{
+        public void call_back(T callback,List<T> callback_lst,Boolean is_success,String msg,String code);
+    }
+
+    public void setListener(OnInteract onInteract){
+        listener = onInteract;
+    }
+
+}
