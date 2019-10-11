@@ -1,0 +1,186 @@
+public class HttpConnect {
+
+    public static HttpConnect instance = new HttpConnect();
+
+    public static HttpConnect getInstance(){
+        if (instance == null){
+            instance = new HttpConnect();
+        }
+        return instance;
+    }
+
+    public String get(Context context, String url){
+        try {
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+            Call call = MyApplication.getHtpClient(context).newCall(request);
+            Response response = call.execute();
+            if (response.isSuccessful()) {
+                return response.body().string();
+            }else {
+                System.out.println("请求失败：" + url + " ErrorCode: " + response.code());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public String get_with_header(Context context, String url,String header_key,String header_value){
+        try {
+            Request request = new Request.Builder()
+                    .addHeader(header_key,header_value)
+                    .url(url)
+                    .build();
+            Call call = MyApplication.getHtpClient(context).newCall(request);
+            Response response = call.execute();
+            if (response.isSuccessful()) {
+                return response.body().string();
+            }else {
+                System.out.println("请求失败：" + url + " ErrorCode: " + response.code());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    //表单提交
+    public String post(Context context,String url, FormBody body){
+        try {
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(body)
+                    .build();
+            Response response = null;
+            response = MyApplication.getHtpClient(context).newCall(request).execute();
+            if (response.isSuccessful()) {
+                return response.body().string();
+            }else {
+                System.out.println("请求失败：" + url + " ErrorCode: " + response.code());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    //登录表单带header
+    public String post_with_header(Context context,String url, FormBody body,String header_key,String header_value){
+        try {
+            Request request = new Request.Builder()
+                    .addHeader(header_key,header_value)
+                    .url(url)
+                    .post(body)
+                    .build();
+            Response response = null;
+            response = MyApplication.getHtpClient(context).newCall(request).execute();
+            if (response.isSuccessful()) {
+                return response.body().string();
+            }else {
+                System.out.println("请求失败：" + url + " ErrorCode: " + response.code());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+
+    //json提交
+    public String post_json(Context context,String url, RequestBody body){
+        try {
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(body)
+                    .build();
+            Response response = null;
+            response = MyApplication.getHtpClient(context).newCall(request).execute();
+            if (response.isSuccessful()) {
+                return response.body().string();
+            }else {
+                System.out.println("请求失败：" + url + " ErrorCode: " + response.code());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public String post_json_with_header(Context context,String url, RequestBody body,String header_key,String header_value){
+        try {
+            Request request = new Request.Builder()
+                    .addHeader(header_key,header_value)
+                    .url(url)
+                    .post(body)
+                    .build();
+            Response response = null;
+            response = MyApplication.getHtpClient(context).newCall(request).execute();
+            if (response.isSuccessful()) {
+                return response.body().string();
+            }else {
+                System.out.println("请求失败：" + url + " ErrorCode: " + response.code());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public String post_file(Context context,String url, String filepath){
+        try {
+            File file=new File(filepath);
+            MediaType MEDIA_TYPE_PNG = MediaType.parse("image/png");
+            RequestBody filebody = MultipartBody.create(MEDIA_TYPE_PNG, file);
+            MultipartBody.Builder multiBuilder=new MultipartBody.Builder();
+            multiBuilder.addFormDataPart("file", file.getName(), filebody);
+            multiBuilder.setType(MultipartBody.FORM);
+            MultipartBody multipartBody = multiBuilder.build();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .post(multipartBody)
+                    .build();
+            Response response = null;
+            response = MyApplication.getHtpClient(context).newCall(request).execute();
+            if (response.isSuccessful()) {
+                return response.body().string();
+            }else {
+                System.out.println("请求失败：" + url + " ErrorCode: " + response.code());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public void downloadFile(Context context,String filepath){
+        Request request=new Request.Builder()
+                .get()
+                .url(filepath)
+                .build();
+        Call call=MyApplication.getHtpClient(context).newCall(request);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                //将响应数据转化为输入流数据
+                InputStream inputStream=response.body().byteStream();
+                //将输入流数据转化为Bitmap位图数据
+                Bitmap bitmap= BitmapFactory.decodeStream(inputStream);
+                File file=new File("/mnt/sdcard/picture.jpg");
+                file.createNewFile();
+                FileOutputStream out=new FileOutputStream(file);
+                bitmap.compress(Bitmap.CompressFormat.JPEG,100,out);
+                out.flush();
+                out.close();
+            }
+        });
+    }
+
+
+}
