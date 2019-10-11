@@ -1,5 +1,5 @@
 # NetTask
-###### 基于安卓安卓AsynTask,fastjson,okhttp3封装的自定义网络请求框架
+###### 基于安卓AsynTask,fastjson,okhttp3封装的自定义网络请求框架
 ###### 该框架支持全自动数据解析,顺序请求，同步请求
 ###### 使用方法：
 ###### 在全局application中初始化设置okHttpClient
